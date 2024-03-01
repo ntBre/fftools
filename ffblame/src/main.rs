@@ -3,6 +3,7 @@
 use fftools::{label_molecule, ParameterMap};
 use log::debug;
 use openff_toolkit::ForceField;
+use rayon::prelude::*;
 use rdkit_rs::ROMol;
 use serde::Deserialize;
 use std::{
@@ -101,19 +102,25 @@ fn main() {
     );
 
     debug!("processing records");
+    let res: Vec<_> = records
+        .into_par_iter()
+        .flat_map(|r| {
+            let smiles = dataset.get(&r.id.to_string()).unwrap();
+            let mol = ROMol::from_smiles(&smiles);
+            // question here of whether or not to consider only unique values.
+            // it might actually make more sense to count it as an additional
+            // error for each occurrence of the parameter in a molecule. this
+            // only counts once per record
+            let pids: HashSet<_> =
+                label_molecule(&mol, &params).into_values().collect();
+            let vals = vec![r.value; pids.len()];
+            pids.into_iter().zip(vals).collect::<Vec<_>>()
+        })
+        .collect();
+
     let mut errors: HashMap<String, Vec<f64>> = HashMap::new();
-    for r in &records {
-        let smiles = dataset.get(&r.id.to_string()).unwrap();
-        let mol = ROMol::from_smiles(&smiles);
-        // question here of whether or not to consider only unique values. it
-        // might actually make more sense to count it as an additional error for
-        // each occurrence of the parameter in a molecule. this only counts once
-        // per record
-        let pids: HashSet<_> =
-            label_molecule(&mol, &params).into_values().collect();
-        for pid in pids {
-            errors.entry(pid).or_default().push(r.value);
-        }
+    for (pid, val) in res {
+        errors.entry(pid).or_default().push(val);
     }
 
     println!("param,mean");
