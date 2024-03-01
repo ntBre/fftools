@@ -1,5 +1,6 @@
 //! read ib output CSV files and assign errors to parameters
 
+use openff_toolkit::ForceField;
 use serde::Deserialize;
 use std::{collections::HashMap, fs::read_to_string, io, path::Path};
 
@@ -60,13 +61,16 @@ fn load_dataset(path: impl AsRef<Path>) -> io::Result<HashMap<String, String>> {
 
 fn main() {
     let args: Vec<_> = std::env::args().collect();
-    if args.len() < 3 {
-        die!("Usage: ffblame <data.csv> <dataset.json>");
+    if args.len() < 4 {
+        die!("Usage: ffblame <data.csv> <dataset.json> <forcefield.offxml>");
     }
     let records = load_csv(&args[1])
         .unwrap_or_else(|e| die!("failed to load {} with {}", args[1], e));
     let dataset = load_dataset(&args[2])
         .unwrap_or_else(|e| die!("failed to load {} with {}", args[2], e));
+    let forcefield = ForceField::load(&args[3])
+        .unwrap_or_else(|e| die!("failed to load {} with {}", args[3], e));
+    dbg!(forcefield.author());
     println!(
         "loaded {} records, {} in dataset",
         records.len(),
