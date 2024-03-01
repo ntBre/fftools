@@ -1,3 +1,13 @@
+[package]
+name = "fftools"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+log = "0.4.20"
+openff-toolkit = { path = "../../omsf/rust/coprelos/openff-toolkit" }
+rdkit-rs = { path = "../rdkit-rs" }
+
 [workspace]
 resolver = "2"
 members = [
