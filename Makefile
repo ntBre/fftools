@@ -23,4 +23,4 @@ install.%:
 run.ffsubset:
 
 run.%:
-	cargo run -p $(subst .,,$(suffix $@)) $(ARGS)
+	cargo run -p $(subst .,,$(suffix $@)) $(CARGO_ARGS) -- $(ARGS)
