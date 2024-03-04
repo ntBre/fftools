@@ -22,5 +22,13 @@ install.%:
 
 run.ffsubset:
 
+run.ffsubset.default:
+	$(call run,ffsubset,-r testfiles/dde.csv -d testfiles/industry.json -f \
+						openff-2.1.0.offxml -s testfiles/subset.in)
+
 run.%:
-	cargo run -p $(subst .,,$(suffix $@)) $(CARGO_ARGS) -- $(ARGS)
+	$(call run,$(subst .,,$(suffix $@)))
+
+# usage:
+# $(call run,BIN_NAME,[args])
+run = cargo run -p $1 $(CARGO_ARGS) -- $(ARGS) $2
