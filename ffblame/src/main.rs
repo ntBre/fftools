@@ -1,18 +1,11 @@
 //! read ib output CSV files and assign errors to parameters
 
-use fftools::{load_csv, load_dataset, parameter_map::ParameterMap};
+use fftools::{die, load_csv, load_dataset, parameter_map::ParameterMap};
 use log::debug;
 use openff_toolkit::ForceField;
 use rayon::prelude::*;
 use rdkit_rs::ROMol;
 use std::collections::{HashMap, HashSet};
-
-macro_rules! die {
-    ($($t:tt)*) => {{
-        eprintln!($($t)*);
-        std::process::exit(1);
-    }};
-}
 
 fn mean(v: &[f64]) -> f64 {
     v.iter().sum::<f64>() / v.len() as f64

@@ -3,6 +3,14 @@ use std::{collections::HashMap, fs::read_to_string, io, path::Path};
 
 pub mod parameter_map;
 
+#[macro_export]
+macro_rules! die {
+    ($($t:tt)*) => {{
+        eprintln!($($t)*);
+        std::process::exit(1);
+    }};
+}
+
 /// A single row from a file loaded by [load_csv]
 pub struct Record {
     /// the QCArchive record ID
