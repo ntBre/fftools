@@ -4,3 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+fftools = { path = "../" }
+openff-toolkit = { path = "../../../omsf/rust/coprelos/openff-toolkit" }
+rayon = "1.9.0"
+rdkit-rs = { path = "../../rdkit-rs" }

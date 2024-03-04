@@ -211,6 +211,12 @@ dependencies = [
 [[package]]
 name = "ffsubset"
 version = "0.1.0"
+dependencies = [
+ "fftools",
+ "openff-toolkit",
+ "rayon",
+ "rdkit-rs",
+]
 
 [[package]]
 name = "fftools"
