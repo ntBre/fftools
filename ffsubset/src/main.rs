@@ -30,8 +30,8 @@ fn process_records(
 ) -> Vec<(Record, HashSet<String>)> {
     let map_op = |r: Record| -> (Record, HashSet<String>) {
         let smiles = dataset.get(&r.id.to_string()).unwrap();
-        // TODO should we be cleaning here?
-        let mol = ROMol::from_smiles(smiles);
+        let mut mol = ROMol::from_smiles(smiles);
+        mol.openff_clean();
         (r, params.label_molecule(&mol).into_values().collect())
     };
     records.into_par_iter().map(map_op).collect()

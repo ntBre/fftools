@@ -27,8 +27,8 @@ fn process_records(
 ) -> Vec<(String, f64)> {
     let map_op = |r: Record| -> Vec<(String, f64)> {
         let smiles = dataset.get(&r.id.to_string()).unwrap();
-        // TODO should we be cleaning here?
-        let mol = ROMol::from_smiles(smiles);
+        let mut mol = ROMol::from_smiles(smiles);
+        mol.openff_clean();
         let pids: HashSet<_> =
             params.label_molecule(&mol).into_values().collect();
         // Collect could possibly be replaced with par_bridge
