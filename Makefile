@@ -1,3 +1,6 @@
+clippy:
+	cargo clippy --workspace --tests
+
 install: install.ffblame
 
 install.ffblame:
