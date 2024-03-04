@@ -32,7 +32,7 @@ fn process_records(
                 params.label_molecule(&mol).into_values().collect();
             pids.into_iter()
                 .zip(std::iter::repeat(r.value))
-                .collect::<Vec<_>>()
+                .collect::<Vec<_>>() /* could be replaced with .par_bridge */
         })
         .collect()
 }
