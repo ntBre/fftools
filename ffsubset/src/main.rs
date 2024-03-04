@@ -2,16 +2,20 @@
 //! parameters and one subset not matching the same parameters
 
 use std::collections::{HashMap, HashSet};
+use std::fmt::Debug;
 use std::fs::read_to_string;
 use std::io;
 use std::path::Path;
 
+use clap::Parser;
 use rayon::prelude::*;
 
 use fftools::parameter_map::ParameterMap;
 use fftools::{die, load_csv, load_dataset, Record};
 use openff_toolkit::ForceField;
 use rdkit_rs::ROMol;
+
+use crate::cli::Cli;
 
 #[cfg(test)]
 mod tests;
@@ -45,19 +49,26 @@ struct Output {
     out_set: Vec<(Record, HashSet<String>)>,
 }
 
-#[allow(clippy::needless_borrow, clippy::needless_borrows_for_generic_args)]
-fn inner(args: &[&str]) -> Output {
-    assert_eq!(args.len(), 5);
-    let records = load_csv(&args[1])
-        .unwrap_or_else(|e| die!("failed to load {} with {}", args[1], e));
-    let dataset = load_dataset(&args[2]).unwrap();
-    let forcefield = ForceField::load(&args[3]).unwrap();
+fn inner<P, Q, R>(records: P, dataset: Q, forcefield: &str, subset: R) -> Output
+where
+    P: AsRef<Path> + Debug,
+    Q: AsRef<Path> + Debug,
+    R: AsRef<Path> + Debug,
+{
+    let records = load_csv(&records)
+        .unwrap_or_else(|e| die!("failed to load {:?} with {}", records, e));
+    let dataset = load_dataset(&dataset)
+        .unwrap_or_else(|e| die!("failed to load {:?} with {}", dataset, e));
+    let forcefield = ForceField::load(forcefield)
+        .unwrap_or_else(|e| die!("failed to load {:?} with {}", forcefield, e));
     let params: ParameterMap = forcefield
         .get_parameter_handler("ProperTorsions")
         .unwrap()
         .into();
-    let subset: HashSet<_> =
-        load_subset(&args[4]).unwrap().into_iter().collect();
+    let subset: HashSet<_> = load_subset(&subset)
+        .unwrap_or_else(|e| die!("failed to load {:?} with {}", subset, e))
+        .into_iter()
+        .collect();
 
     let processed_records = process_records(records, dataset, params);
 
@@ -67,15 +78,40 @@ fn inner(args: &[&str]) -> Output {
     Output { in_set, out_set }
 }
 
+mod cli {
+    use std::path::PathBuf;
+
+    use clap::Parser;
+
+    #[derive(Parser)]
+    #[command(version, about, long_about = None)]
+    pub struct Cli {
+        #[arg(short, long)]
+        pub records: PathBuf,
+
+        #[arg(short, long)]
+        pub dataset: PathBuf,
+
+        #[arg(short, long)]
+        pub forcefield: String,
+
+        #[arg(short, long)]
+        pub subset: PathBuf,
+
+        #[arg(short, long, default_value_t = 0)]
+        pub threads: usize,
+    }
+}
+
 fn main() {
-    let args = [
-        "ffsubset",
-        "testfiles/dde.csv",
-        "testfiles/industry.json",
-        "openff-2.1.0.offxml",
-        "testfiles/subset.in",
-    ];
-    let res = inner(&args);
+    let args = Cli::parse();
+
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(args.threads)
+        .build_global()
+        .expect("failed to initialize thread pool");
+
+    let res = inner(args.records, args.dataset, &args.forcefield, args.subset);
 
     dbg!(res.in_set.len(), res.out_set.len());
 }
