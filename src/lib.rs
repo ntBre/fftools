@@ -1,5 +1,3 @@
-use log::trace;
-use rdkit_rs::{find_smarts_matches_mol, ROMol};
 use serde::Deserialize;
 use std::{collections::HashMap, fs::read_to_string, io, path::Path};
 
@@ -53,24 +51,4 @@ pub fn load_dataset(
         .flatten()
         .map(|rec| (rec.record_id, rec.cmiles))
         .collect())
-}
-
-/// label `mol` with `params` and return a map of chemical environment tuples to
-/// parameter IDs
-pub fn label_molecule(
-    mol: &ROMol,
-    params: &parameter_map::ParameterMap,
-) -> HashMap<Vec<usize>, String> {
-    let mut matches = HashMap::new();
-    for (id, smirks) in &params.0 {
-        let env_matches = find_smarts_matches_mol(mol, smirks);
-        for mut mat in env_matches {
-            if mat.first().unwrap() > mat.last().unwrap() {
-                mat.reverse();
-            }
-            trace!("{mat:?} => {id}");
-            matches.insert(mat, id.clone());
-        }
-    }
-    matches
 }

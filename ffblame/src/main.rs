@@ -1,6 +1,6 @@
 //! read ib output CSV files and assign errors to parameters
 
-use fftools::{label_molecule, load_csv, load_dataset, parameter_map::ParameterMap};
+use fftools::{load_csv, load_dataset, parameter_map::ParameterMap};
 use log::debug;
 use openff_toolkit::ForceField;
 use rayon::prelude::*;
@@ -58,7 +58,7 @@ fn main() {
             // error for each occurrence of the parameter in a molecule. this
             // only counts once per record
             let pids: HashSet<_> =
-                label_molecule(&mol, &params).into_values().collect();
+                params.label_molecule(&mol).into_values().collect();
             let vals = vec![r.value; pids.len()];
             pids.into_iter().zip(vals).collect::<Vec<_>>()
         })
