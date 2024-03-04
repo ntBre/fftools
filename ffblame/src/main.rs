@@ -1,6 +1,8 @@
 //! read ib output CSV files and assign errors to parameters
 
-use fftools::{die, load_csv, load_dataset, parameter_map::ParameterMap};
+use fftools::{
+    die, load_csv, load_dataset, parameter_map::ParameterMap, Record,
+};
 use log::debug;
 use openff_toolkit::ForceField;
 use rayon::prelude::*;
@@ -9,6 +11,29 @@ use std::collections::{HashMap, HashSet};
 
 fn mean(v: &[f64]) -> f64 {
     v.iter().sum::<f64>() / v.len() as f64
+}
+
+/// TODO there is a question here of whether or not to consider only unique
+/// values. it might actually make more sense to count it as an additional error
+/// for each occurrence of the parameter in a molecule. this only counts once
+/// per record
+fn process_records(
+    records: Vec<Record>,
+    dataset: HashMap<String, String>,
+    params: ParameterMap,
+) -> Vec<(String, f64)> {
+    records
+        .into_par_iter()
+        .flat_map(|r| {
+            let smiles = dataset.get(&r.id.to_string()).unwrap();
+            // TODO should we be cleaning here?
+            let mol = ROMol::from_smiles(smiles);
+            let pids: HashSet<_> =
+                params.label_molecule(&mol).into_values().collect();
+            let vals = vec![r.value; pids.len()];
+            pids.into_iter().zip(vals).collect::<Vec<_>>()
+        })
+        .collect()
 }
 
 fn main() {
@@ -41,21 +66,7 @@ fn main() {
     );
 
     debug!("processing records");
-    let res: Vec<_> = records
-        .into_par_iter()
-        .flat_map(|r| {
-            let smiles = dataset.get(&r.id.to_string()).unwrap();
-            let mol = ROMol::from_smiles(smiles);
-            // question here of whether or not to consider only unique values.
-            // it might actually make more sense to count it as an additional
-            // error for each occurrence of the parameter in a molecule. this
-            // only counts once per record
-            let pids: HashSet<_> =
-                params.label_molecule(&mol).into_values().collect();
-            let vals = vec![r.value; pids.len()];
-            pids.into_iter().zip(vals).collect::<Vec<_>>()
-        })
-        .collect();
+    let res = process_records(records, dataset, params);
 
     let mut errors: HashMap<String, Vec<f64>> = HashMap::new();
     for (pid, val) in res {
