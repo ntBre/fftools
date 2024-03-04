@@ -1,8 +1,9 @@
 use log::trace;
-use openff_toolkit::typing::engines::smirnoff::parameters::ParameterHandler;
 use rdkit_rs::{find_smarts_matches_mol, ROMol};
 use serde::Deserialize;
 use std::{collections::HashMap, fs::read_to_string, io, path::Path};
+
+pub mod parameter_map;
 
 pub struct Record {
     /// the QCArchive record ID
@@ -54,35 +55,11 @@ pub fn load_dataset(
         .collect())
 }
 
-pub struct ParameterMap(Vec<(String, ROMol)>);
-
-impl ParameterMap {
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-}
-
-impl From<ParameterHandler> for ParameterMap {
-    fn from(ph: ParameterHandler) -> Self {
-        Self(
-            ph.parameters()
-                .into_iter()
-                .map(|p| (p.id(), ROMol::from_smarts(&p.smirks())))
-                .collect(),
-        )
-    }
-}
-
 /// label `mol` with `params` and return a map of chemical environment tuples to
 /// parameter IDs
 pub fn label_molecule(
     mol: &ROMol,
-    params: &ParameterMap,
+    params: &parameter_map::ParameterMap,
 ) -> HashMap<Vec<usize>, String> {
     let mut matches = HashMap::new();
     for (id, smirks) in &params.0 {

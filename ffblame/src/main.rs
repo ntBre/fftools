@@ -1,6 +1,6 @@
 //! read ib output CSV files and assign errors to parameters
 
-use fftools::{label_molecule, load_csv, load_dataset, ParameterMap};
+use fftools::{label_molecule, load_csv, load_dataset, parameter_map::ParameterMap};
 use log::debug;
 use openff_toolkit::ForceField;
 use rayon::prelude::*;
