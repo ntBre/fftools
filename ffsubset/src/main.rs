@@ -13,6 +13,9 @@ use fftools::{die, load_csv, load_dataset, Record};
 use openff_toolkit::ForceField;
 use rdkit_rs::ROMol;
 
+#[cfg(test)]
+mod tests;
+
 /// Load a sequence of whitespace-separated parameter IDs from `path`
 fn load_subset(path: impl AsRef<Path>) -> io::Result<Vec<String>> {
     Ok(read_to_string(path)?
@@ -75,23 +78,4 @@ fn main() {
     let res = inner(&args);
 
     dbg!(res.in_set.len(), res.out_set.len());
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_inner() {
-        let Output { in_set, out_set } = inner(&[
-            "ffsubset",
-            "../testfiles/dde.csv",
-            "../testfiles/industry.json",
-            "openff-2.1.0.offxml",
-            "../testfiles/subset.in",
-        ]);
-
-        assert_eq!(in_set.len(), 58825);
-        assert_eq!(out_set.len(), 12935);
-    }
 }
