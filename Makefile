@@ -13,7 +13,9 @@ doc:
 install: install.ffblame
 
 install.ffblame:
-	cargo install --path ffblame
+
+install.%:
+	cargo install --path $(subst .,,$(suffix $@))
 
 run.ffsubset:
 
