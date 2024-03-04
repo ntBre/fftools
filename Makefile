@@ -1,6 +1,15 @@
 clippy:
 	cargo clippy --workspace --tests
 
+docflags :=
+
+ifdef OPEN
+	docflags += --open
+endif
+
+doc:
+	cargo doc --no-deps $(docflags)
+
 install: install.ffblame
 
 install.ffblame:
