@@ -30,8 +30,9 @@ fn process_records(
             let mol = ROMol::from_smiles(smiles);
             let pids: HashSet<_> =
                 params.label_molecule(&mol).into_values().collect();
-            let vals = vec![r.value; pids.len()];
-            pids.into_iter().zip(vals).collect::<Vec<_>>()
+            pids.into_iter()
+                .zip(std::iter::repeat(r.value))
+                .collect::<Vec<_>>()
         })
         .collect()
 }
