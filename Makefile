@@ -14,3 +14,8 @@ install: install.ffblame
 
 install.ffblame:
 	cargo install --path ffblame
+
+run.ffsubset:
+
+run.%:
+	cargo run -p $(subst .,,$(suffix $@)) $(ARGS)
