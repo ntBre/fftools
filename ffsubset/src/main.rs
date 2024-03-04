@@ -9,7 +9,7 @@ use std::path::Path;
 use rayon::prelude::*;
 
 use fftools::parameter_map::ParameterMap;
-use fftools::{load_csv, load_dataset, Record};
+use fftools::{die, load_csv, load_dataset, Record};
 use openff_toolkit::ForceField;
 use rdkit_rs::ROMol;
 
@@ -37,15 +37,16 @@ fn process_records(
     records.into_par_iter().map(map_op).collect()
 }
 
-fn main() {
-    let args = [
-        "ffsubset",
-        "testfiles/dde.csv",
-        "testfiles/industry.json",
-        "openff-2.1.0.offxml",
-        "testfiles/subset.in",
-    ];
-    let records = load_csv(&args[1]).unwrap();
+struct Output {
+    in_set: Vec<(Record, HashSet<String>)>,
+    out_set: Vec<(Record, HashSet<String>)>,
+}
+
+#[allow(clippy::needless_borrow, clippy::needless_borrows_for_generic_args)]
+fn inner(args: &[&str]) -> Output {
+    assert_eq!(args.len(), 5);
+    let records = load_csv(&args[1])
+        .unwrap_or_else(|e| die!("failed to load {} with {}", args[1], e));
     let dataset = load_dataset(&args[2]).unwrap();
     let forcefield = ForceField::load(&args[3]).unwrap();
     let params: ParameterMap = forcefield
@@ -57,9 +58,40 @@ fn main() {
 
     let processed_records = process_records(records, dataset, params);
 
-    let (int, out): (Vec<_>, Vec<_>) = processed_records
+    let (in_set, out_set): (Vec<_>, Vec<_>) = processed_records
         .into_iter()
         .partition(|(_r, pids)| pids.intersection(&subset).count() > 0);
+    Output { in_set, out_set }
+}
 
-    dbg!(int.len(), out.len());
+fn main() {
+    let args = [
+        "ffsubset",
+        "testfiles/dde.csv",
+        "testfiles/industry.json",
+        "openff-2.1.0.offxml",
+        "testfiles/subset.in",
+    ];
+    let res = inner(&args);
+
+    dbg!(res.in_set.len(), res.out_set.len());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_inner() {
+        let Output { in_set, out_set } = inner(&[
+            "ffsubset",
+            "../testfiles/dde.csv",
+            "../testfiles/industry.json",
+            "openff-2.1.0.offxml",
+            "../testfiles/subset.in",
+        ]);
+
+        assert_eq!(in_set.len(), 58825);
+        assert_eq!(out_set.len(), 12935);
+    }
 }
