@@ -111,7 +111,13 @@ fn main() {
         .build_global()
         .expect("failed to initialize thread pool");
 
-    let res = inner(args.records, args.dataset, &args.forcefield, args.subset);
+    let Output { in_set, out_set } =
+        inner(args.records, args.dataset, &args.forcefield, args.subset);
 
-    dbg!(res.in_set.len(), res.out_set.len());
+    for (rec, _) in in_set {
+        println!("inset,{},{}", rec.id, rec.value);
+    }
+    for (rec, _) in out_set {
+        println!("outset,{},{}", rec.id, rec.value);
+    }
 }
