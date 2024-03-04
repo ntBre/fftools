@@ -59,7 +59,7 @@ fn main() {
 
     let (int, out): (Vec<_>, Vec<_>) = processed_records
         .into_iter()
-        .partition(|(_r, pids)| pids.intersection(&subset).count() > 1);
+        .partition(|(_r, pids)| pids.intersection(&subset).count() > 0);
 
     dbg!(int.len(), out.len());
 }
