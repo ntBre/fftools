@@ -7,7 +7,10 @@ use log::debug;
 use openff_toolkit::ForceField;
 use rayon::prelude::*;
 use rdkit_rs::ROMol;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    iter,
+};
 
 fn mean(v: &[f64]) -> f64 {
     v.iter().sum::<f64>() / v.len() as f64
@@ -22,19 +25,16 @@ fn process_records(
     dataset: HashMap<String, String>,
     params: ParameterMap,
 ) -> Vec<(String, f64)> {
-    records
-        .into_par_iter()
-        .flat_map(|r| {
-            let smiles = dataset.get(&r.id.to_string()).unwrap();
-            // TODO should we be cleaning here?
-            let mol = ROMol::from_smiles(smiles);
-            let pids: HashSet<_> =
-                params.label_molecule(&mol).into_values().collect();
-            pids.into_iter()
-                .zip(std::iter::repeat(r.value))
-                .collect::<Vec<_>>() /* could be replaced with .par_bridge */
-        })
-        .collect()
+    let map_op = |r: Record| -> Vec<(String, f64)> {
+        let smiles = dataset.get(&r.id.to_string()).unwrap();
+        // TODO should we be cleaning here?
+        let mol = ROMol::from_smiles(smiles);
+        let pids: HashSet<_> =
+            params.label_molecule(&mol).into_values().collect();
+        // Collect could possibly be replaced with par_bridge
+        pids.into_iter().zip(iter::repeat(r.value)).collect()
+    };
+    records.into_par_iter().flat_map(map_op).collect()
 }
 
 fn main() {
