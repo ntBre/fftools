@@ -251,6 +251,10 @@ dependencies = [
 [[package]]
 name = "ffdiff"
 version = "0.1.0"
+dependencies = [
+ "fftools",
+ "openff-toolkit",
+]
 
 [[package]]
 name = "ffsubset"
