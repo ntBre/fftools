@@ -117,10 +117,12 @@ fn main() {
     let Output { in_set, out_set } =
         inner(args.records, args.dataset, &args.forcefield, args.subset);
 
+    let mut prefix = true;
     let (mut win, mut wout): (
         Box<dyn std::io::Write>,
         Box<dyn std::io::Write>,
     ) = if let Some(base) = args.output_base {
+        prefix = false;
         let in_file = std::fs::File::create(base.with_extension("in")).unwrap();
         let out_file =
             std::fs::File::create(base.with_extension("out")).unwrap();
@@ -130,9 +132,15 @@ fn main() {
     };
 
     for (rec, _) in in_set {
-        writeln!(win, "inset,{},{}", rec.id, rec.value).unwrap();
+        if prefix {
+            write!(win, "inset,").unwrap();
+        }
+        writeln!(win, "{},{}", rec.id, rec.value).unwrap();
     }
     for (rec, _) in out_set {
-        writeln!(wout, "outset,{},{}", rec.id, rec.value).unwrap();
+        if prefix {
+            write!(win, "outset,").unwrap();
+        }
+        writeln!(wout, "{},{}", rec.id, rec.value).unwrap();
     }
 }
