@@ -22,7 +22,7 @@ fn main() {
     let p1 = get_params(&args[1]);
     let mut ps = Vec::new();
     for arg in &args[2..] {
-        ps.push(get_params(&arg));
+        ps.push(get_params(arg));
     }
 
     print!("param");
