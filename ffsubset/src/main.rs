@@ -100,6 +100,9 @@ mod cli {
 
         #[arg(short, long, default_value_t = 0)]
         pub threads: usize,
+
+        #[arg(short, long)]
+        pub output_base: Option<PathBuf>,
     }
 }
 
@@ -114,10 +117,22 @@ fn main() {
     let Output { in_set, out_set } =
         inner(args.records, args.dataset, &args.forcefield, args.subset);
 
+    let (mut win, mut wout): (
+        Box<dyn std::io::Write>,
+        Box<dyn std::io::Write>,
+    ) = if let Some(base) = args.output_base {
+        let in_file = std::fs::File::create(base.with_extension("in")).unwrap();
+        let out_file =
+            std::fs::File::create(base.with_extension("out")).unwrap();
+        (Box::new(in_file), Box::new(out_file))
+    } else {
+        (Box::new(std::io::stdout()), Box::new(std::io::stdout()))
+    };
+
     for (rec, _) in in_set {
-        println!("inset,{},{}", rec.id, rec.value);
+        writeln!(win, "inset,{},{}", rec.id, rec.value).unwrap();
     }
     for (rec, _) in out_set {
-        println!("outset,{},{}", rec.id, rec.value);
+        writeln!(wout, "outset,{},{}", rec.id, rec.value).unwrap();
     }
 }
