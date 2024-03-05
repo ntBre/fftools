@@ -17,13 +17,29 @@ fn get_params(ff: &str) -> Vec<(String, f64)> {
 fn main() {
     let args: Vec<_> = std::env::args().collect();
     if args.len() < 3 {
-        fftools::die!("Usage: ffdiff <ff1.offxml> <ff2.offxml>");
+        fftools::die!("Usage: ffdiff <ff1.offxml> <ff2.offxml>...");
     }
     let p1 = get_params(&args[1]);
-    let p2 = get_params(&args[2]);
+    let mut ps = Vec::new();
+    for arg in &args[2..] {
+        ps.push(get_params(&arg));
+    }
+
+    print!("param");
+    for a in &args[1..] {
+        print!(" {}", a.strip_suffix(".offxml").unwrap());
+    }
+    println!();
+
     for (k, v) in p1 {
-        if let Some((_, v2)) = p2.iter().find(|(n, _)| n == &k) {
-            println!("{k} {v} {v2}");
+        print!("{k} {v}");
+        for p2 in &ps {
+            if let Some((_, v2)) = p2.iter().find(|(n, _)| n == &k) {
+                print!(" {v2}");
+            } else {
+                print!(" NA");
+            }
         }
+        println!();
     }
 }
