@@ -13,9 +13,8 @@ endif
 doc:
 	cargo doc --no-deps $(docflags)
 
-install: install.ffblame
-
-install.ffblame:
+.PHONY: install
+install: install.ffblame install.ffdiff install.ffsubset
 
 install.%:
 	cargo install --path $(subst .,,$(suffix $@))
