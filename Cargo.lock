@@ -249,11 +249,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "ffchar"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "fftools",
+ "log",
+ "openff-toolkit",
+ "rayon",
+ "rdkit-rs",
+]
+
+[[package]]
 name = "ffdiff"
 version = "0.1.0"
 dependencies = [
  "fftools",
  "openff-toolkit",
+]
+
+[[package]]
+name = "ffmoved"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "fftools",
+ "log",
+ "openff-toolkit",
+ "rayon",
+ "rdkit-rs",
 ]
 
 [[package]]

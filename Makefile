@@ -25,6 +25,9 @@ run.ffsubset.default:
 	$(call run,ffsubset,-r testfiles/dde.csv -d testfiles/industry.json -f \
 						openff-2.1.0.offxml -s testfiles/subset.in)
 
+run.ffchar.default:
+	$(call run,ffchar,testfiles/dde.csv testfiles/industry.json openff-2.1.0.offxml)
+
 run.%:
 	$(call run,$(subst .,,$(suffix $@)))
 

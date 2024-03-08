@@ -1,0 +1,12 @@
+[package]
+name = "ffmoved"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fftools = { path = "../" }
+env_logger = "0.11.1"
+log = "0.4.20"
+openff-toolkit = { path = "../../../omsf/rust/coprelos/openff-toolkit" }
+rdkit-rs = { path = "../../rdkit-rs" }
+rayon = "1.9.0"
