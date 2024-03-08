@@ -48,9 +48,9 @@ fn main() {
         .unwrap()
         .into();
 
-    let _: Vec<()> = molecules
+    let results: Vec<_> = molecules
         .par_iter()
-        .map(|(_id, mol)| {
+        .map(|(id, mol)| {
             let l1 = p1.label_molecule(mol);
             let l2 = p2.label_molecule(mol);
             #[cfg(debug_assertions)]
@@ -63,6 +63,21 @@ fn main() {
                 k2.sort();
                 assert_eq!(k1, k2);
             }
+            (id, l1, l2)
         })
         .collect();
+
+    // for each molecule, we now have their full vectors of chemical
+    // environments and their assigned parameters for both force fields,
+    // so we should iterate through the environments and see which ones
+    // have different assigned parameters and print those
+
+    for (id, l1, l2) in results {
+        for (k, pid1) in &l1 {
+            let pid2 = l2.get(k).expect("unknown chemical environment");
+            if pid1 != pid2 {
+                println!("{id} {k:?} {pid1} => {pid2}");
+            }
+        }
+    }
 }
