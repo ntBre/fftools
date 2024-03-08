@@ -2,7 +2,9 @@
 
 use fftools::{die, load_dataset, parameter_map::ParameterMap};
 use openff_toolkit::ForceField;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{
+    IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
+};
 use rdkit_rs::ROMol;
 
 fn main() {
@@ -46,18 +48,21 @@ fn main() {
         .unwrap()
         .into();
 
-    for (_id, mol) in &molecules {
-        let l1 = p1.label_molecule(mol);
-        let l2 = p2.label_molecule(mol);
-        #[cfg(debug_assertions)]
-        {
-            // check that the two sets of chemical environments are the same,
-            // otherwise the comparison is wrong and/or meaningless
-            let mut k1: Vec<_> = l1.keys().collect();
-            let mut k2: Vec<_> = l2.keys().collect();
-            k1.sort();
-            k2.sort();
-            assert_eq!(k1, k2);
-        }
-    }
+    let _: Vec<()> = molecules
+        .par_iter()
+        .map(|(_id, mol)| {
+            let l1 = p1.label_molecule(mol);
+            let l2 = p2.label_molecule(mol);
+            #[cfg(debug_assertions)]
+            {
+                // check that the two sets of chemical environments are the
+                // same, otherwise the comparison is wrong and/or meaningless
+                let mut k1: Vec<_> = l1.keys().collect();
+                let mut k2: Vec<_> = l2.keys().collect();
+                k1.sort();
+                k2.sort();
+                assert_eq!(k1, k2);
+            }
+        })
+        .collect();
 }
