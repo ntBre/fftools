@@ -1,5 +1,6 @@
 //! Track changes in parameter assignment between force fields
 
+use clap::Parser;
 use fftools::{die, load_dataset, parameter_map::ParameterMap};
 use openff_toolkit::ForceField;
 use rayon::iter::{
@@ -7,23 +8,24 @@ use rayon::iter::{
 };
 use rdkit_rs::ROMol;
 
-fn main() {
-    let args = [
-        "ffmoved",
-        "testfiles/industry.json",
-        "openff-2.0.0.offxml",
-        "openff-2.1.0.offxml",
-    ];
+#[derive(Parser)]
+struct Cli {
+    #[arg(short, long)]
+    dataset: String,
+    #[arg(short, long)]
+    ff1: String,
+    #[arg(short, long)]
+    ff2: String,
+}
 
-    // usage:
-    // ffmoved dataset forcefields...
+fn main() {
+    let args = Cli::parse();
 
     // assign parameters for each record for each force field, then see where
     // they went. going to be similar to ffblame I think with a dataset and
     // force field, but we don't need a benchmarking csv
-
-    let dataset = load_dataset(&args[1])
-        .unwrap_or_else(|e| die!("failed to load {} with {}", args[1], e));
+    let dataset = load_dataset(&args.dataset)
+        .unwrap_or_else(|e| die!("failed to load {} with {}", args.dataset, e));
 
     let molecules: Vec<(String, ROMol)> = dataset
         .into_par_iter()
@@ -36,13 +38,13 @@ fn main() {
 
     let tors = "ProperTorsions";
 
-    let p1: ParameterMap = ForceField::load(&args[2])
+    let p1: ParameterMap = ForceField::load(&args.ff1)
         .unwrap()
         .get_parameter_handler(tors)
         .unwrap()
         .into();
 
-    let p2: ParameterMap = ForceField::load(&args[3])
+    let p2: ParameterMap = ForceField::load(&args.ff2)
         .unwrap()
         .get_parameter_handler(tors)
         .unwrap()

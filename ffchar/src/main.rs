@@ -13,6 +13,7 @@ fn _mean(v: &[f64]) -> f64 {
     v.iter().sum::<f64>() / v.len() as f64
 }
 
+#[allow(unused)]
 struct MRecord {
     /// record_id
     id: usize,

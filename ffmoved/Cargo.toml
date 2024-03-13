@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+clap = { version = "4.5.1", features = ["derive"] }
 fftools = { path = "../" }
 env_logger = "0.11.1"
 log = "0.4.20"
