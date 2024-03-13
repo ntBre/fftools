@@ -1,6 +1,7 @@
 //! compute dataset coverage for a force field
 
 use std::{
+    cmp,
     collections::{HashMap, HashSet},
     path::PathBuf,
 };
@@ -29,6 +30,12 @@ struct Match {
     mol: HashSet<Smiles>,
 }
 
+impl Match {
+    fn by_env(&self, other: &Self) -> cmp::Ordering {
+        self.env.cmp(&other.env)
+    }
+}
+
 fn main() {
     let cli = Cli::parse();
     let ff = ForceField::load(&cli.forcefield).unwrap();
@@ -50,7 +57,7 @@ fn main() {
     }
 
     let mut matches: Vec<_> = matches.into_iter().collect();
-    matches.sort_by(|a, b| b.1.env.cmp(&a.1.env)); // reversed by env count
+    matches.sort_by(|(_, a), (_, b)| Match::by_env(b, a)); // rev by env count
 
     let pid_w = 6;
     let env_w = 8;
