@@ -4,6 +4,9 @@ use std::{collections::HashMap, fs::read_to_string, io, path::Path};
 /// A parameter identifier
 pub type Pid = String;
 
+/// A SMILES string
+pub type Smiles = String;
+
 pub mod parameter_map;
 
 #[macro_export]
