@@ -46,17 +46,17 @@ pub fn load_csv(path: impl AsRef<Path>) -> io::Result<Vec<Record>> {
 
 /// A single entry in a [Dataset]
 #[derive(Deserialize)]
-pub struct Entry {
+pub struct Entry<T> {
     /// the QCArchive record ID
-    pub record_id: String,
+    pub record_id: T,
 
     /// the canonical SMILES string representing the molecule
     pub cmiles: String,
 }
 
 #[derive(Deserialize)]
-pub struct Dataset {
-    pub entries: HashMap<String, Vec<Entry>>,
+pub struct Dataset<T> {
+    pub entries: HashMap<String, Vec<Entry<T>>>,
 }
 
 /// Load a [Dataset] from `path` and return it as a map of record ID to SMILES.
@@ -67,11 +67,25 @@ pub struct Dataset {
 pub fn load_dataset(
     path: impl AsRef<Path>,
 ) -> io::Result<HashMap<String, String>> {
-    let ds: Dataset = serde_json::from_str(&read_to_string(path)?)?;
-    Ok(ds
-        .entries
-        .into_values()
-        .flatten()
-        .map(|rec| (rec.record_id, rec.cmiles))
-        .collect())
+    /// new datasets keep the record IDs as integers, not strings. if loading as
+    /// a string fails, try again with usize
+    fn inner<T: for<'a> Deserialize<'a> + Eq + std::hash::Hash>(
+        path: impl AsRef<Path>,
+    ) -> io::Result<HashMap<T, String>> {
+        let ds: Dataset<T> = serde_json::from_str(&read_to_string(path)?)?;
+        Ok(ds
+            .entries
+            .into_values()
+            .flatten()
+            .map(|rec| (rec.record_id, rec.cmiles))
+            .collect())
+    }
+    let ret = match inner::<String>(&path) {
+        Ok(ds) => ds,
+        Err(_) => {
+            let ds = inner::<usize>(&path)?;
+            ds.into_iter().map(|(k, v)| (k.to_string(), v)).collect()
+        }
+    };
+    Ok(ret)
 }
