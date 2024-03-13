@@ -6,7 +6,7 @@ use std::{
 };
 
 use clap::Parser;
-use fftools::{load_dataset, parameter_map::ParameterMap, Pid};
+use fftools::{load_dataset, parameter_map::ParameterMap, Pid, Smiles};
 use openff_toolkit::ForceField;
 use rdkit_rs::ROMol;
 
@@ -31,6 +31,7 @@ fn main() {
 
     let mut env_matches: HashMap<Pid, usize> = HashMap::new();
     let mut rec_matches: HashMap<Pid, HashSet<String>> = HashMap::new();
+    let mut mol_matches: HashMap<Pid, HashSet<Smiles>> = HashMap::new();
     for (rec_id, smiles) in dataset {
         let mut mol = ROMol::from_smiles(&smiles);
         mol.openff_clean();
@@ -41,6 +42,10 @@ fn main() {
                 .entry(id.clone())
                 .or_default()
                 .insert(rec_id.clone());
+            mol_matches
+                .entry(id.clone())
+                .or_default()
+                .insert(smiles.clone());
         }
     }
 
@@ -50,18 +55,17 @@ fn main() {
     let pid_w = 6;
     let env_w = 8;
     let rec_w = 8;
+    let smi_w = 8;
     println!(
-        "{pid:<pid_w$} {env:>env_w$} {rec:>rec_w$}",
+        "{pid:<pid_w$} {env:>env_w$} {rec:>rec_w$} {smi:>smi_w$}",
         pid = "pid",
         env = "env",
-        rec = "rec"
+        rec = "rec",
+        smi = "smi",
     );
     for (pid, count) in env_matches {
-        let rec = if let Some(s) = rec_matches.get(&pid) {
-            s.len()
-        } else {
-            0
-        };
-        println!("{pid:<pid_w$} {count:>env_w$} {rec:>rec_w$}");
+        let rec = rec_matches.get(&pid).map(HashSet::len).unwrap_or(0);
+        let smi = mol_matches.get(&pid).map(HashSet::len).unwrap_or(0);
+        println!("{pid:<pid_w$} {count:>env_w$} {rec:>rec_w$} {smi:>smi_w$}");
     }
 }
