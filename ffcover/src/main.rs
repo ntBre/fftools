@@ -22,6 +22,13 @@ struct Cli {
     dataset: PathBuf,
 }
 
+#[derive(Default)]
+struct Match {
+    env: usize,
+    rec: HashSet<String>,
+    mol: HashSet<Smiles>,
+}
+
 fn main() {
     let cli = Cli::parse();
     let ff = ForceField::load(&cli.forcefield).unwrap();
@@ -29,28 +36,21 @@ fn main() {
         ff.get_parameter_handler("ProperTorsions").unwrap().into();
     let dataset = load_dataset(&cli.dataset).unwrap();
 
-    let mut env_matches: HashMap<Pid, usize> = HashMap::new();
-    let mut rec_matches: HashMap<Pid, HashSet<String>> = HashMap::new();
-    let mut mol_matches: HashMap<Pid, HashSet<Smiles>> = HashMap::new();
+    let mut matches: HashMap<Pid, Match> = HashMap::new();
     for (rec_id, smiles) in dataset {
         let mut mol = ROMol::from_smiles(&smiles);
         mol.openff_clean();
         let labels = params.label_molecule(&mol);
         for (_env, id) in labels {
-            *env_matches.entry(id.clone()).or_default() += 1;
-            rec_matches
-                .entry(id.clone())
-                .or_default()
-                .insert(rec_id.clone());
-            mol_matches
-                .entry(id.clone())
-                .or_default()
-                .insert(smiles.clone());
+            let entry = matches.entry(id.clone()).or_default();
+            entry.env += 1;
+            entry.rec.insert(rec_id.clone());
+            entry.mol.insert(smiles.clone());
         }
     }
 
-    let mut env_matches: Vec<_> = env_matches.into_iter().collect();
-    env_matches.sort_by(|a, b| b.1.cmp(&a.1)); // reversed by count
+    let mut matches: Vec<_> = matches.into_iter().collect();
+    matches.sort_by(|a, b| b.1.env.cmp(&a.1.env)); // reversed by env count
 
     let pid_w = 6;
     let env_w = 8;
@@ -63,9 +63,9 @@ fn main() {
         rec = "rec",
         smi = "smi",
     );
-    for (pid, count) in env_matches {
-        let rec = rec_matches.get(&pid).map(HashSet::len).unwrap_or(0);
-        let smi = mol_matches.get(&pid).map(HashSet::len).unwrap_or(0);
-        println!("{pid:<pid_w$} {count:>env_w$} {rec:>rec_w$} {smi:>smi_w$}");
+    for (pid, Match { env, rec, mol }) in matches {
+        let rec = rec.len();
+        let smi = mol.len();
+        println!("{pid:<pid_w$} {env:>env_w$} {rec:>rec_w$} {smi:>smi_w$}");
     }
 }
