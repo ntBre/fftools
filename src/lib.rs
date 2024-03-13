@@ -1,6 +1,9 @@
 use serde::Deserialize;
 use std::{collections::HashMap, fs::read_to_string, io, path::Path};
 
+/// A parameter identifier
+pub type Pid = String;
+
 pub mod parameter_map;
 
 #[macro_export]
@@ -53,7 +56,11 @@ pub struct Dataset {
     pub entries: HashMap<String, Vec<Entry>>,
 }
 
-/// Load a [Dataset] from `path` and return it as a map of record ID to SMILES
+/// Load a [Dataset] from `path` and return it as a map of record ID to SMILES.
+///
+/// This function loads directly from JSON without using any code specific to a
+/// certain dataset type, allowing it to work for both
+/// OptimizationResultCollections and TorsionDriveResultCollections.
 pub fn load_dataset(
     path: impl AsRef<Path>,
 ) -> io::Result<HashMap<String, String>> {

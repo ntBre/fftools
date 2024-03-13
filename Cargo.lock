@@ -261,6 +261,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ffcover"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "env_logger",
+ "fftools",
+ "log",
+ "openff-toolkit",
+ "rayon",
+ "rdkit-rs",
+]
+
+[[package]]
 name = "ffdiff"
 version = "0.1.0"
 dependencies = [
@@ -618,6 +631,7 @@ dependencies = [
 [[package]]
 name = "rdkit-sys"
 version = "0.1.0"
+source = "git+https://github.com/ntBre/rdkit-sys#0a63b7c2da3b9c81278e75e084674a7de98eda41"
 dependencies = [
  "bindgen",
 ]
