@@ -8,4 +8,4 @@ clap = { version = "4.5.1", features = ["derive"] }
 fftools = { path = "../" }
 openff-toolkit = { path = "../../../omsf/rust/coprelos/openff-toolkit" }
 rayon = "1.9.0"
-rdkit-rs = { path = "../../rdkit-rs" }
+rdkit-rs = { git = "https://github.com/ntBre/rdkit-rs" }

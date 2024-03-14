@@ -5,10 +5,7 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.5.1", features = ["derive"] }
-env_logger = "0.11.1"
 fftools = { path = "../" }
-log = "0.4.20"
 openff-toolkit = { path = "../../../omsf/rust/coprelos/openff-toolkit" }
 openff-qcsubmit = { path = "../../../omsf/rust/coprelos/openff-qcsubmit" }
-rayon = "1.9.0"
-rdkit-rs = { path = "../../rdkit-rs" }
+rdkit-rs = { git = "https://github.com/ntBre/rdkit-rs" }
