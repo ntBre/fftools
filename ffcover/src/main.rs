@@ -84,26 +84,28 @@ fn opt_main(dataset: HashMap<String, String>, params: ParameterMap) {
 
 /// Process a dataset after contacting QCArchive to retrieve the TorsionDrive
 /// record information
-fn td_main(dataset: impl AsRef<Path>, params: ParameterMap) {
+fn td_main(dataset: impl AsRef<Path>, ff: ForceField) {
     let mut matches: HashMap<Pid, Match> = HashMap::new();
     let ds = TorsionDriveResultCollection::parse_file(dataset).unwrap();
     for (rec, mol) in ds.to_records() {
         let d = &rec.specification.keywords.dihedrals[0];
+        // this is definitely 0-indexed, at least it sometimes has zeros
         let dihedral = vec![d.0, d.1, d.2, d.3];
-        let smiles = mol.to_smiles();
-        let mut mol = ROMol::from_smiles(&smiles);
-        mol.openff_clean();
-        let labels = params.label_molecule(&mol);
-        for (mut env, id) in labels {
-            let td_match = env == dihedral || {
-                env.reverse();
-                env == dihedral
-            };
-            let entry = matches.entry(id.clone()).or_default();
+        let labels = ff.label_molecules(mol.to_topology())[0]
+            .remove("ProperTorsions")
+            .unwrap();
+        let smiles = mol.to_smiles_default();
+        for (mut env, p) in labels {
+            let entry = matches.entry(p.id()).or_default();
             entry.env += 1;
             entry.rec.insert(rec.id.to_string());
             entry.mol.insert(smiles.clone());
-            entry.tor += td_match as usize;
+            if env == dihedral || {
+                env.reverse();
+                env == dihedral
+            } {
+                entry.tor += 1;
+            }
         }
     }
     let mut matches: Vec<_> = matches.into_iter().collect();
@@ -135,12 +137,41 @@ fn td_main(dataset: impl AsRef<Path>, params: ParameterMap) {
 fn main() {
     let cli = Cli::parse();
     let ff = ForceField::load(&cli.forcefield).unwrap();
-    let params: ParameterMap =
-        ff.get_parameter_handler("ProperTorsions").unwrap().into();
 
     if cli.torsions {
-        td_main(&cli.dataset, params);
+        td_main(&cli.dataset, ff);
     } else {
-        opt_main(load_dataset(&cli.dataset).unwrap(), params);
+        let params: ParameterMap =
+            ff.get_parameter_handler("ProperTorsions").unwrap().into();
+        let dataset = load_dataset(&cli.dataset).unwrap();
+        opt_main(dataset, params);
     }
 }
+
+// everything is right except the torsions, which is what I expected
+
+// python output for small td.json
+// t1 (5, 6, 7, 8) (5, 6, 7, 8)
+// t2 (0, 2, 5, 4) (0, 2, 5, 4)
+// t3 (20, 7, 10, 27) (20, 7, 10, 27)
+// t3 (25, 12, 13, 27) (25, 12, 13, 27)
+// t3 (5, 0, 2, 10) (5, 0, 2, 10)
+// t44          96        3        3        0
+// t4           35        2        2        0
+// t17          26        3        3        0
+// t1           22        5        5        1
+// t3           21        5        5        3
+// t64          12        1        1        0
+// t9            6        1        1        0
+// t95           4        1        1        0
+// t2            3        1        1        1
+// t94           3        1        1        0
+// t93           3        1        1        0
+// t10           2        1        1        0
+// t96           2        1        1        0
+// t18           2        1        1        0
+// t75           2        1        1        0
+// t77           2        1        1        0
+// t23           1        1        1        0
+// t19           1        1        1        0
+// t5            1        1        1        0
