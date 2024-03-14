@@ -137,11 +137,10 @@ fn main() {
     let ff = ForceField::load(&cli.forcefield).unwrap();
     let params: ParameterMap =
         ff.get_parameter_handler("ProperTorsions").unwrap().into();
-    let dataset = load_dataset(&cli.dataset).unwrap();
 
     if cli.torsions {
         td_main(&cli.dataset, params);
     } else {
-        opt_main(dataset, params);
+        opt_main(load_dataset(&cli.dataset).unwrap(), params);
     }
 }
