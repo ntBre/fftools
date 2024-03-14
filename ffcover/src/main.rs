@@ -35,6 +35,7 @@ struct Match {
     env: usize,
     rec: HashSet<String>,
     mol: HashSet<Smiles>,
+    tor: usize,
 }
 
 impl Match {
@@ -74,57 +75,61 @@ fn opt_main(dataset: HashMap<String, String>, params: ParameterMap) {
         rec = "rec",
         smi = "smi",
     );
-    for (pid, Match { env, rec, mol }) in matches {
+    for (pid, Match { env, rec, mol, .. }) in matches {
         let rec = rec.len();
         let smi = mol.len();
         println!("{pid:<pid_w$} {env:>env_w$} {rec:>rec_w$} {smi:>smi_w$}");
     }
 }
 
-/// Process a dataset using only the data in the dataset, without contacting
-/// QCArchive to retrieve record information
-fn td_main(dataset: impl AsRef<Path>, _params: ParameterMap) {
-    let _matches: HashMap<Pid, Match> = HashMap::new();
+/// Process a dataset after contacting QCArchive to retrieve the TorsionDrive
+/// record information
+fn td_main(dataset: impl AsRef<Path>, params: ParameterMap) {
+    let mut matches: HashMap<Pid, Match> = HashMap::new();
     let ds = TorsionDriveResultCollection::parse_file(dataset).unwrap();
     for (rec, mol) in ds.to_records() {
+        let d = &rec.specification.keywords.dihedrals[0];
+        let dihedral = vec![d.0, d.1, d.2, d.3];
+        let smiles = mol.to_smiles();
+        let mut mol = ROMol::from_smiles(&smiles);
+        mol.openff_clean();
+        let labels = params.label_molecule(&mol);
+        for (mut env, id) in labels {
+            let td_match = env == dihedral || {
+                env.reverse();
+                env == dihedral
+            };
+            let entry = matches.entry(id.clone()).or_default();
+            entry.env += 1;
+            entry.rec.insert(rec.id.to_string());
+            entry.mol.insert(smiles.clone());
+            entry.tor += td_match as usize;
+        }
+    }
+    let mut matches: Vec<_> = matches.into_iter().collect();
+    matches.sort_by(|(_, a), (_, b)| Match::by_env(b, a)); // rev by env count
+
+    let pid_w = 6;
+    let env_w = 8;
+    let rec_w = 8;
+    let smi_w = 8;
+    let tor_w = 8;
+    println!(
+        "{pid:<pid_w$} {env:>env_w$} {rec:>rec_w$} {smi:>smi_w$} {tor:>tor_w$}",
+        pid = "pid",
+        env = "env",
+        rec = "rec",
+        smi = "smi",
+        tor = "tor",
+    );
+    for (pid, Match { env, rec, mol, tor }) in matches {
+        let rec = rec.len();
+        let smi = mol.len();
         println!(
-            "{:?} => {:?}",
-            rec.specification.keywords.dihedrals,
-            mol.to_smiles()
+            "{pid:<pid_w$} {env:>env_w$} {rec:>rec_w$} \
+             {smi:>smi_w$} {tor:>tor_w$}"
         );
     }
-    // for (rec_id, smiles) in dataset {
-    //     let mut mol = ROMol::from_smiles(&smiles);
-    //     mol.openff_clean();
-    //     let labels = params.label_molecule(&mol);
-    //     for (_env, id) in labels {
-    //         let entry = matches.entry(id.clone()).or_default();
-    //         entry.env += 1;
-    //         entry.rec.insert(rec_id.clone());
-    //         entry.mol.insert(smiles.clone());
-    //     }
-    // }
-
-    // let mut matches: Vec<_> = matches.into_iter().collect();
-    // matches.sort_by(|(_, a), (_, b)| Match::by_env(b, a));
-    // // rev by env count
-
-    // let pid_w = 6;
-    // let env_w = 8;
-    // let rec_w = 8;
-    // let smi_w = 8;
-    // println!(
-    //     "{pid:<pid_w$} {env:>env_w$} {rec:>rec_w$} {smi:>smi_w$}",
-    //     pid = "pid",
-    //     env = "env",
-    //     rec = "rec",
-    //     smi = "smi",
-    // );
-    // for (pid, Match { env, rec, mol }) in matches {
-    //     let rec = rec.len();
-    //     let smi = mol.len();
-    //     println!("{pid:<pid_w$} {env:>env_w$} {rec:>rec_w$} {smi:>smi_w$}");
-    // }
 }
 
 fn main() {
