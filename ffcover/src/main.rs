@@ -47,13 +47,18 @@ impl Match {
 /// Process a dataset using only the data in the dataset, without contacting
 /// QCArchive to retrieve record information
 fn opt_main(dataset: HashMap<String, String>, params: ParameterMap) {
-    let mut matches: HashMap<Pid, Match> = HashMap::new();
+    let mut matches: HashMap<Pid, Match> = params
+        .keys()
+        .cloned()
+        .map(|pid| (pid, Match::default()))
+        .collect();
     for (rec_id, smiles) in dataset {
         let mut mol = ROMol::from_smiles(&smiles);
         mol.openff_clean();
         let labels = params.label_molecule(&mol);
         for (_env, id) in labels {
-            let entry = matches.entry(id.clone()).or_default();
+            // pid must have been pre-inserted into the map
+            let entry = matches.get_mut(&id).unwrap();
             entry.env += 1;
             entry.rec.insert(rec_id.clone());
             entry.mol.insert(smiles.clone());
@@ -85,7 +90,13 @@ fn opt_main(dataset: HashMap<String, String>, params: ParameterMap) {
 /// Process a dataset after contacting QCArchive to retrieve the TorsionDrive
 /// record information
 fn td_main(dataset: impl AsRef<Path>, ff: ForceField) {
-    let mut matches: HashMap<Pid, Match> = HashMap::new();
+    let mut matches: HashMap<Pid, Match> = ff
+        .get_parameter_handler("ProperTorsions")
+        .unwrap()
+        .parameters()
+        .into_iter()
+        .map(|p| (p.id(), Match::default()))
+        .collect();
     let ds = TorsionDriveResultCollection::parse_file(dataset).unwrap();
     for (rec, mol) in ds.to_records() {
         let d = &rec.specification.keywords.dihedrals[0];
@@ -96,7 +107,8 @@ fn td_main(dataset: impl AsRef<Path>, ff: ForceField) {
             .unwrap();
         let smiles = mol.to_smiles_default();
         for (mut env, p) in labels {
-            let entry = matches.entry(p.id()).or_default();
+            // pid must have been pre-inserted into the map
+            let entry = matches.get_mut(&p.id()).unwrap();
             entry.env += 1;
             entry.rec.insert(rec.id.to_string());
             entry.mol.insert(smiles.clone());
