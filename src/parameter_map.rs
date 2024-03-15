@@ -4,12 +4,14 @@ use rdkit_rs::{find_smarts_matches_mol, ROMol};
 
 use std::collections::HashMap;
 
+use crate::Pid;
+
 /// A [ParameterMap] is basically the Rust/RDKit-compatible version of an OpenFF
 /// ForceField. Instead of having to access parameter SMIRKS patterns as Strings
 /// and pass them to RDKit as such, a [ParameterMap] converts them all to
 /// [ROMol] up front for faster matching in [ParameterMap::label_molecule]. TODO
 /// support more than one [ParameterHandler] at a time.
-pub struct ParameterMap(Vec<(String, ROMol)>);
+pub struct ParameterMap(Vec<(Pid, ROMol)>);
 
 impl ParameterMap {
     pub fn len(&self) -> usize {
@@ -19,6 +21,10 @@ impl ParameterMap {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    pub fn keys(&self) -> impl Iterator<Item = &Pid> {
+        self.0.iter().map(|(pid, _mol)| pid)
     }
 
     /// label `mol` with `params` and return a map of chemical environment
